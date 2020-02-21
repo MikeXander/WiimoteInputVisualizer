@@ -9,11 +9,14 @@ BUTTON_PRESS_MODE = BUTTON_PRESS_MODES[1]
 light_blue = [100,255,255] #P1
 yellow = [255,220,0] #P2
 
-blackFrame = np.zeros((720, 1280, 3), np.uint8)
-Frame = np.copy(blackFrame)
+BLACKFRAME = np.zeros((720, 1280, 3), np.uint8)
 
-cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("frame", 1280, 720)
+WINDOW_NAME = "Input Display"
+WIDTH = 1280
+HEIGHT = 720
+
+FPS = 60
+
 
 def setColour(image, RGB):
     BGR = [RGB[2], RGB[1], RGB[0]]
@@ -122,44 +125,69 @@ def drawButtons(frame, buttons):
 
 
 def drawConsts(frame):
-    draw(frame, "JOYSTICK", LOCATION["JOYSTICK"])
-    draw(frame, "DPAD", LOCATION["DPAD"])
+    constButtons = ["JOYSTICK", "DPAD"]
+    for button in constButtons:
+        draw(frame, button, LOCATION[button])
+        draw(frame, button, LOCATION[button])
 
 
-def display(data):
-    for obj in data:
-        Frame = np.copy(blackFrame)
-    
-        drawButtons(getButtons(obj))
-        drawStick(Frame, obj["stick"]["X"], obj["stick"]["Y"])
-        drawConsts()
-    
-        cv2.imshow("frame", Frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        
+def getFrame(data):
+    frame = np.copy(BLACKFRAME)
+    drawButtons(frame, getButtons(data))
+    drawStick(frame, data["stick"]["X"], data["stick"]["Y"])
+    drawConsts(frame)
+    return frame
 
-def save(data, name, width, height):
+
+def save(data, codec, filename, fps = FPS):
     print("saving video...")
-    FPS = 60
-    fourcc = cv2.VideoWriter_fourcc(*"XVID")
-    out = cv2.VideoWriter(name + ".avi", fourcc, 60.0, (width, height))
+    fourcc = cv2.VideoWriter_fourcc(*codec)
+    out = cv2.VideoWriter(filename, fourcc, fps, (WIDTH, HEIGHT))
     for obj in data:
-        frame = np.copy(blackFrame)
-        drawButtons(frame, getButtons(obj))
-        drawStick(frame, obj["stick"]["X"], obj["stick"]["Y"])
-        drawConsts(frame)
+        frame = getFrame(obj)
         out.write(frame)
     out.release()
-    print("saved " + name + ".avi")
+    print("saved " + filename)
 
- 
-with open("data.json") as file:
-    data = json.load(file)
-print("data loaded")
 
-save(data, "output", 1280, 720)
+def getData(filename, loadMsg = True):
+    data = []
+    with open(filename) as file:
+        data = json.load(file)
+    if loadMsg:
+        print(filename + " loaded")
+    return data
 
-cv2.destroyAllWindows()
+
+def initDisplay():
+    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(WINDOW_NAME, WIDTH, HEIGHT)
+
+
+def showLastFrame(filename):
+    data = getData(filename, False)
+    frame = getFrame(data[-1])
+    cv2.imshow(WINDOW_NAME, frame)
+
+
+def exitCondition():
+    return cv2.waitKey(1) & 0xFF == ord('q')
+
+
+def closeWindow():
+    cv2.destroyAllWindows()
+
+
+def playback(data):
+    initDisplay()
+    for obj in data:
+        start = time.time()
+        frame = getFrame(obj)
+        cv2.imshow(WINDOW_NAME, frame)
+        time.sleep(max(1/FPS - (time.time() - start), 0))
+        if exitCondition():
+            break
+    print("Playback ended")
+    closeWindow()
 
 

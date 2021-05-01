@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import json
 import time
+import pygame
 
 BUTTON_PRESS_MODES = ["fill", "negative", "dark"]
 BUTTON_PRESS_MODE = BUTTON_PRESS_MODES[1]
@@ -9,47 +10,49 @@ BUTTON_PRESS_MODE = BUTTON_PRESS_MODES[1]
 light_blue = [100,255,255] #P1
 yellow = [255,220,0] #P2
 
-BLACKFRAME = np.zeros((720, 1280, 3), np.uint8)
-
-WINDOW_NAME = "Input Display"
 WIDTH = 1280
 HEIGHT = 720
 
 FPS = 60
 
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Wiimote Input Visualizer")
+
 
 def setColour(image, RGB):
-    BGR = [RGB[2], RGB[1], RGB[0]]
-    for i in range(3):
-        for y in range(image.shape[0]):
-            for x in range(image.shape[1]):
-                image[y, x, i] = max(0, image[y, x, i]-255+BGR[i])
-        #image[0:image.shape[0], 0:image.shape[1], i] -= 255-RGB[i] # underflows
-    #image = np.clip(image, 0, 255) # not working?
+    w, h = image.get_size()
+    r, g, b = RGB
+    for x in range(w):
+        for y in range(h):
+            p = image.get_at((x, y))
+            t = 25 # threshhold for setting to transparent
+            if p[0] < t and p[1] < t and p[2] < t:
+                image.set_at((x, y), pygame.Color(0, 0, 0, 0))
+            else:
+                image.set_at((x, y), pygame.Color(r, g, b, p[3]))
 
 
 def loadImage(filename, RGB = [255,255,255]):
-    img = cv2.imread("./Textures/"+filename, 1)
+    img = pygame.image.load("./Textures/"+filename)#.convert()
     setColour(img, RGB)
-    return np.copy(img)
+    return img
 
 
 def draw(frame, key, loc):
     global graphics
     if not key.upper() in graphics.keys(): return
-    x, y = loc
-    image = graphics[key.upper()]
-    frame[y:y+image.shape[0], x:x+image.shape[1], 0:3] += image
+    frame.blit(graphics[key.upper()], loc)
+    return frame
 
     
 def drawStick(frame, x, y):
     scalar = 58
     start = (LOCATION["JOYSTICK"][0] + 62, LOCATION["JOYSTICK"][0] + 78)
     end = (int(x * scalar) + start[0], int(-y * scalar) + start[1])
-    white = (255,255,255)
-    thickness = 4
-    cv2.line(frame, start, end, white, thickness)
-    #draw("js-outline", end[0]-64, end[1]-64)
+    white = pygame.Color(255,255,255)
+    pygame.draw.aaline(frame, white, start, end)
+    return frame
 
 
 graphics = {
@@ -121,21 +124,23 @@ def drawButtons(frame, buttons):
     global LOCATION
     for button in buttons:
         if button in LOCATION:
-            draw(frame, button, LOCATION[button.upper()])
+            frame = draw(frame, button, LOCATION[button.upper()])
+    return frame
 
 
 def drawConsts(frame):
     constButtons = ["JOYSTICK", "DPAD"]
     for button in constButtons:
-        draw(frame, button, LOCATION[button])
-        draw(frame, button, LOCATION[button])
+        frame = draw(frame, button, LOCATION[button])
+        frame = draw(frame, button, LOCATION[button])
+    return frame
 
 
 def getFrame(data):
-    frame = np.copy(BLACKFRAME)
-    drawButtons(frame, getButtons(data))
-    drawStick(frame, data["stick"]["X"], data["stick"]["Y"])
-    drawConsts(frame)
+    frame = pygame.Surface((WIDTH, HEIGHT))
+    frame = drawButtons(frame, getButtons(data))
+    frame = drawStick(frame, data["stick"]["X"], data["stick"]["Y"])
+    frame = drawConsts(frame)
     return frame
 
 
@@ -145,6 +150,12 @@ def save(data, codec, filename, fps = FPS):
     out = cv2.VideoWriter(filename, fourcc, fps, (WIDTH, HEIGHT))
     for obj in data:
         frame = getFrame(obj)
+        screen.blit(frame, (0, 0)) # show it while encoding
+        pygame.display.update()
+        frame = pygame.surfarray.array3d(frame)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # convert
+        frame = np.fliplr(frame)
+        frame = np.rot90(frame)
         out.write(frame)
     out.release()
     print("saved " + filename)
@@ -159,35 +170,11 @@ def getData(filename, loadMsg = True):
     return data
 
 
-def initDisplay():
-    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WINDOW_NAME, WIDTH, HEIGHT)
-
-
-def showLastFrame(filename):
-    data = getData(filename, False)
-    frame = getFrame(data[-1])
-    cv2.imshow(WINDOW_NAME, frame)
-
-
-def exitCondition():
-    return cv2.waitKey(1) & 0xFF == ord('q')
-
-
-def closeWindow():
-    cv2.destroyAllWindows()
-
-
 def playback(data):
-    initDisplay()
     for obj in data:
         start = time.time()
         frame = getFrame(obj)
-        cv2.imshow(WINDOW_NAME, frame)
+        screen.blit(frame, (0, 0))
+        pygame.display.flip()
         time.sleep(max(1/FPS - (time.time() - start), 0))
-        if exitCondition():
-            break
     print("Playback ended")
-    closeWindow()
-
-

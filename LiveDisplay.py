@@ -1,36 +1,62 @@
 # File watcher source: https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
 import WiimoteInputEncoder as encoder
+from Cores.SuperMarioGalaxy import *
+import pygame
 import time
-from watchdog.observers import Observer
-from watchdog.events import PatternMatchingEventHandler
 
-FILEPATH = ".\data.json" 
-FILENAME = "data.json"
+FPS = 60 # max limit
 
-encoder.initDisplay()
+pygame.init()
+screen = pygame.display.set_mode((550, 280))
+pygame.display.set_caption("Wiimote Input Visualizer")
 
-if __name__ == "__main__":
-    my_event_handler = PatternMatchingEventHandler("*", "", False, True)
-
-def on_modified(event):
-    if event.src_path == FILEPATH:
-        encoder.showLastFrame(FILENAME)
-
-my_event_handler.on_modified = on_modified
-
-path = "."
-my_observer = Observer()
-my_observer.schedule(my_event_handler, path)
-my_observer.start()
-
-try:
-    while True:
-        time.sleep(1)
-        if encoder.exitCondition(): #cv2 requirement
-            encoder.closeWindow()
+while True:
+    start = time.time()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
             break
-except KeyboardInterrupt:
-    my_observer.stop()
-    my_observer.join()
-    encoder.closeWindow()
+    data = {}
+    try:
+        b = buttons()
+        s = stick()
+        data = {
+            "frame":0,
+            "buttons":{
+                "p1b":"B" in b["P1"],
+                "p2b":"B" in b["P2"],
+                "p1a":"A" in b["P1"],
+                "two":"2" in b["P1"],
+                "right":"RIGHT" in b["P1"],
+                "one":"1" in b["P1"],
+                "z":"Z" in b["P1"],
+                "p2a":"A" in b["P2"],
+                "left":"LEFT" in b["P1"],
+                "plus":"+" in b["P1"],
+                "down":"DOWN" in b["P1"],
+                "minus":"-" in b["P1"],
+                "up":"UP" in b["P1"],
+                "c":"C" in b["P1"],
+                "home":"HOME" in b["P1"]
+            },
+            "vel":{
+                "position": position(),
+                "up_grav": up_gravity(),
+                "velocity": base_velocity(),
+                "gravity": down_gravity(),
+                "tilt": tilt()
+            },
+            "stick":{
+                "Y": s["Y_processed"],
+                "X": s["X_processed"]
+            }
+        }
+    except Exception as e:
+        print(e)
+        break
+    screen.blit(encoder.getFrame(data), (0, 0))
+    pygame.display.update()
+    time.sleep(max(1/FPS - (time.time() - start), 0))
 
+pygame.display.quit()

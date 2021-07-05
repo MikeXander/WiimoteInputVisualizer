@@ -91,6 +91,17 @@ def stick():
         "Y_processed": dme.read_float(0x61D3A4)
     }
 
+# accel values from -512 to 511
+def wiimote_accel():
+    offset = 0x661242
+    adjust = lambda x: x if x <= 511 else -1 * (0xFFFF - x + 1)
+    read_accel = lambda addr: adjust(intb(dme.read_bytes(addr, 2)))
+    return {
+        "X": read_accel(offset + 0x0),
+        "Y": read_accel(offset + 0x2),
+        "Z": read_accel(offset + 0x4)
+    }
+
 # returns the list of buttons being pressed
 # includes all P1 buttons, and only A/B for P2
 def buttons():

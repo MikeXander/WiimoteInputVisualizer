@@ -1,4 +1,3 @@
-# File watcher source: https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
 import WiimoteInputEncoder as encoder
 from Cores.SuperMarioGalaxy import *
 import pygame

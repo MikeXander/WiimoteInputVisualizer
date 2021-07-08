@@ -1,11 +1,17 @@
-from Cores.SuperMarioGalaxy import *
+from Cores.SuperMarioGalaxy import wiimote_accel
 import pygame
 from pygame.locals import *
 import time
+import keyboard
 from math import pi, acos, atan2
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OBJLoader import *
+from WiimoteInputEncoder import start_encoding, save_frame, stop_encoding
+
+UPRIGHT = 0
+SIDEWAYS = 1
+MODE = UPRIGHT # <---- change the mode here
 
 FPS = 60 # max limit
 
@@ -36,7 +42,12 @@ def init():
     glShadeModel(GL_SMOOTH)
 init()
 
-wiimote = OBJ("./Textures/20210523_wiimote_low_pivot.obj", scale=30)
+
+wiimote = 0
+if MODE == UPRIGHT:
+    wiimote = OBJ("./Textures/20210523_wiimote_low_pivot.obj", scale=30)
+elif MODE == SIDEWAYS:
+    wiimote = OBJ("./Textures/20210523_wiimote.obj", scale=30)
 wiimote.generate()
 
 accel = {'X': 0, 'Y': 0, 'Z': 0}
@@ -126,7 +137,7 @@ def sphere_coords(X, Y, Z):
     Yaw.step()
     Pitch.step()
     
-    return Yaw.value, Pitch.value
+    return Yaw.value, Pitch.value, 0
 
 # https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf
 # if I take the time to do the lin alg and get yaw this will probably
@@ -140,6 +151,40 @@ def other_solution(X, Y, Z):
     
     Pitch.step()
     Roll.step()
+
+    return 0, Pitch.value, Roll.value
+
+def sideways_mode(X, Y, Z):
+    global Yaw, Pitch, Roll
+    rho = max((X*X + Y*Y + Z*Z)**0.5, 0.00001)
+    Yaw.target = -atan2(Y, X) * 180/pi - 90
+    Roll.target = -atan2(Z, X) * 180/pi + 180
+
+    # PID is struggling when it switches from 89 to -270
+    # this makes it so the flip point is when it's upsidedown
+    if Yaw.value >= 0 and Yaw.target < Yaw.value - 180:
+        Yaw.value -= 360
+    elif Yaw.target >= 0 and Yaw.value < Yaw.target - 180:
+        Yaw.value += 360
+
+    # when holding sideways, we only care about angles [-90, 90]
+    # where 0 is flat. Make sure the PID doesn't spin the other way.
+    if Roll.value < 90 and Roll.target > Roll.value + 180:
+        Roll.value += 360
+    elif Roll.target < 90 and Roll.value > Roll.target + 180:
+        Roll.value -= 360
+
+    # TODO: fix resting upright/flat up/down...
+    EPSILON = 1
+    if abs(Yaw.target - (-90)) <= EPSILON and Roll.target == 90:
+        Yaw.target = -270
+    elif abs(Yaw.target - 0) <= EPSILON and Roll.target == 270:
+        Yaw.target = -270
+
+    Yaw.step()
+    Roll.step()
+    
+    return Yaw.value, 0, Roll.value
 
 
 def RotYawPitch(yaw, pitch):
@@ -156,6 +201,26 @@ def RotAll(yaw, pitch, roll):
     glRotate(round(yaw), 0, 0, 1)
     glRotate(round(pitch), 1, 0, 0)
     glRotate(round(roll), 0, 1, 0)
+
+
+# Recording framework
+# not sure why it doesnt work
+#(maybe the pygame screen doesnt have the model?)
+ENCODING = False
+output = {}
+def encode():
+    global ENCODING, output, screen
+    
+    if keyboard.is_pressed('s') and not ENCODING:
+        #output = start_encoding("XVID", "output.avi", size[0], size[1], 60)
+        ENCODING = True
+        
+    if keyboard.is_pressed('d') and ENCODING:
+        #stop_encoding(output)
+        ENCODING = False
+            
+    #if ENCODING:
+        #doutput = save_frame(output, screen)
 
 
 while True:
@@ -195,9 +260,14 @@ while True:
     Y.step()
     Z.target = accel['Z']
     Z.step()
-    
-    yaw, pitch = sphere_coords(X.value, Y.value, Z.value)
-    #other_solution(X.value, Y.value, Z.value)
+
+    yaw, pitch, roll = 0, 0, 0
+    if MODE == UPRIGHT:
+        yaw, pitch, roll = sphere_coords(X.value, Y.value, Z.value)
+    elif MODE == SIDEWAYS:
+        yaw, pitch, roll = sideways_mode(X.value, Y.value, Z.value)
+    else:
+        yaw, pitch, roll = other_solution(X.value, Y.value, Z.value)
     print(f"%4d %4d %4d" % (round(yaw), round(pitch), round(Roll.value)))
 
     # setup display
@@ -205,13 +275,11 @@ while True:
     glLoadIdentity()
     glTranslate(0, -1, -8)
     
-    RotYawPitch(yaw, pitch)
-    #RotPitchRoll()
-    #RotAll()
-    
+    RotAll(yaw, pitch, roll)
     wiimote.render()
     
     pygame.display.flip()
+    encode()
     time.sleep(max(1/FPS - (time.time() - start), 0))
 
 pygame.display.quit()

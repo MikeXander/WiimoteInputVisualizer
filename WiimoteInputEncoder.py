@@ -178,3 +178,23 @@ def playback(data):
         pygame.display.flip()
         time.sleep(max(1/FPS - (time.time() - start), 0))
     print("Playback ended")
+
+
+
+def start_encoding(codec, filename, width, height, fps = FPS):
+    print("\n\nsaving video...\n")
+    fourcc = cv2.VideoWriter_fourcc(*codec)
+    out = cv2.VideoWriter(filename, fourcc, fps, (width, height))
+    return out
+
+def save_frame(out, surf):
+    frame = pygame.surfarray.array3d(surf)
+    #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # convert
+    #frame = np.fliplr(frame)
+    frame = np.rot90(frame)
+    out.write(frame)
+    return out
+
+def stop_encoding(out):
+    out.release()
+    print("\n\nVideo saved\n")

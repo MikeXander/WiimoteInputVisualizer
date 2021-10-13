@@ -39,13 +39,13 @@ while True:
                 "c":"C" in b["P1"],
                 "home":"HOME" in b["P1"]
             },
-            "vel":{
-                "position": position(),
-                "up_grav": up_gravity(),
-                "velocity": base_velocity(),
-                "gravity": down_gravity(),
-                "tilt": tilt()
-            },
+            #"vel":{
+            #    "position": position(),
+            #    "up_grav": up_gravity(),
+            #    "velocity": base_velocity(),
+            #    "gravity": down_gravity(),
+            #    "tilt": tilt()
+            #},
             "stick":{
                 "Y": s["Y_processed"],
                 "X": s["X_processed"]

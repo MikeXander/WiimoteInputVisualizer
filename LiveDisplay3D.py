@@ -248,7 +248,7 @@ while True:
         for axis in "XYZ":
             if abs(accel[axis] - new_accel[axis]) > TOLERANCE:
                 accel[axis] = new_accel[axis]
-    #print(accel)
+    print(accel, f"%.2f" % ((accel['X']**2 + accel['Y']**2 + accel['Z']**2)**0.5))
 
     # noise filter
     for k in accel.keys():
@@ -268,7 +268,7 @@ while True:
         yaw, pitch, roll = sideways_mode(X.value, Y.value, Z.value)
     else:
         yaw, pitch, roll = other_solution(X.value, Y.value, Z.value)
-    print(f"%4d %4d %4d" % (round(yaw), round(pitch), round(Roll.value)))
+    #print(f"%4d %4d %4d" % (round(yaw), round(pitch), round(Roll.value)))
 
     # setup display
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

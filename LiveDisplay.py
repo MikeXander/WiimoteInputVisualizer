@@ -52,10 +52,32 @@ while True:
             }
         }
     except Exception as e:
-        print(e)
-        break
-    screen.blit(encoder.getFrame(data), (0, 0))
-    pygame.display.update()
+        if str(e)[:21] == "Could not read memory":
+            print("Could not read memeory. Waiting reconnect...")
+            time.sleep(3)
+        else:
+            print(e)
+            break
+
+    try:
+        f = encoder.getFrame(data)
+    
+        hspd = f"HSpd: %.3f" % round(speed()["XZ"], 3)
+        yspd = "\nYSpd: %.3f" % base_velocity()["Y"] if base_velocity()["Y"] != 0 else "\nYSpd: 0.000"
+        y = "\nY: %.3f" % previous_position()["Y"]
+        text = hspd + y
+
+        """f = encoder.add_text(f, text,
+            (40, 15), # pos
+            (255,255,255), # colour
+            25 # size
+        )"""
+        
+        screen.blit(f, (0, 0))
+        pygame.display.update()
+    except Exception as e:
+        pass
+    
     time.sleep(max(1/FPS - (time.time() - start), 0))
 
 pygame.display.quit()

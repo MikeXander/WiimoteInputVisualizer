@@ -1,8 +1,15 @@
-import WiimoteInputEncoder as encoder
+from WiimoteInputEncoder import Encoder
+from Layouts import WiimoteLayout
 
-inputFname = "data.json"
-codec = "XVID"
-outputFname = "output.avi"
-FPS = 60
+encoder = Encoder(
+    window_size = (550, 250),
+    background_colour = (0, 0, 0)
+)
 
-encoder.save(encoder.getData(inputFname), codec, outputFname, FPS)
+encoder.save(
+    input_filename = "_inputs.csv",
+    layout = WiimoteLayout(),
+    output_filename = "output.mp4",
+    codec = "mp4v",
+    fps = 60
+)

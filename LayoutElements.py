@@ -7,9 +7,10 @@ import pygame
 # 4. allow different colour components within a LayoutElement
 # 5. pixel slight transparency. This might be able to be fixed already by changing the images?
 
+# If all RGB values of a pixel are < Texture.TRANSPARENT_THRESHOLD, they are set to transparent
+# If any RGB values are < 0, the colour in the config is ignored (the transparent clamp above still happens)
 
 class Texture:
-    # pixels with all RGB values under this are set to transparent
     TRANSPARENT_THRESHOLD = 25
 
     def __init__(self, image_filename: str):
@@ -38,10 +39,9 @@ class Texture:
         for x in range(w):
             for y in range(h):
                 pixel = self.img.get_at((x, y))
-                t = 25 # threshhold for setting to transparent
                 if all(v < Texture.TRANSPARENT_THRESHOLD for v in pixel[:3]):
                     self.img.set_at((x, y), pygame.Color(0, 0, 0, 0))
-                else:
+                elif all(v >= 0 for v in self.colour):
                     self.img.set_at((x, y), pygame.Color(r, g, b, pixel[3]))
 
 

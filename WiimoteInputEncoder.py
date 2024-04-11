@@ -1,5 +1,5 @@
 from Layouts import Layout
-from WiimoteDataParser import WiimoteData
+import WiimoteDataParser
 from typing import List
 from PIL import Image, ImageDraw, ImageFont
 import pygame
@@ -29,7 +29,7 @@ class Encoder:
         self.screen = pygame.display.set_mode(self.size)
         pygame.display.set_caption("Wiimote Input Visualizer")
 
-    def new_frame(self, *layouts: List[Layout]):
+    def new_frame(self, layouts: List[Layout]):
         self.frame = pygame.Surface(self.size)
         self.frame.fill(self.background_colour)
         for layout in layouts:
@@ -64,22 +64,23 @@ class Encoder:
         self.frame = pygame.surfarray.make_surface(arr)
 
     # preview what it looks like
-    def playback(self, input_filename: str, layout: Layout, fps = 60):
+    def playback(self, input_filename: str, layouts: List[Layout], fps = 60):
         data = [] # read file
         with open(input_filename, 'r') as f:
             data = f.readlines()
         for line in data[1:]:
             start = time()
-            obj = WiimoteData(line)
-            layout.set_inputs(obj)
-            self.new_frame(layout)
+            wiimotes = WiimoteDataParser.Parse(line)
+            for layout, wm in zip(layouts, wiimotes):
+                layout.set_inputs(wm)
+            self.new_frame(layouts)
             self.show()
             sleep(max(1/fps - (time() - start), 0))
         print("Playback complete.")
         
 
     # can use "XVID" codec for avi
-    def save(self, input_filename: str, layout: Layout, output_filename = "output.mp4", codec = "mp4v", fps = 60):
+    def save(self, input_filename: str, layouts: List[Layout], output_filename = "output.mp4", codec = "mp4v", fps = 60):
         print("Encoding inputs as video...", end=' ')
         fourcc = cv2.VideoWriter_fourcc(*codec)
         out = cv2.VideoWriter(output_filename, fourcc, fps, self.size)
@@ -89,13 +90,14 @@ class Encoder:
             data = f.readlines()
         print("Inputs loaded.")
 
-        last_frame = WiimoteData(data[-1]).frame
+        last_frame = WiimoteDataParser.Parse(data[-1])[0].frame
         for line in data[1:]: # skip header
-            obj = WiimoteData(line)
-            print(f"frame: {obj.frame} / {last_frame}", end='\r', flush=True)
+            wiimotes = WiimoteDataParser.Parse(line)
+            print(f"frame: {wiimotes[0].frame} / {last_frame}", end='\r', flush=True)
             
-            layout.set_inputs(obj)
-            self.new_frame(layout)
+            for layout, wm in zip(layouts, wiimotes):
+                layout.set_inputs(wm)
+            self.new_frame(layouts)
             self.show() # show it while encoding
 
             frame = pygame.surfarray.array3d(self.frame)

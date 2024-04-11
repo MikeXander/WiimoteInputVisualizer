@@ -129,16 +129,32 @@ class DPad(LayoutElement):
 
 
 class Joystick(LayoutElement):
-    def __init__(self, thickness = 3):
+    # Expects joystick values to range from 0 to max_stick_value
+    # This will be used to normalize the stick and draw the line
+    # (0,0) will be drawn on the bottom left edge of the joystick-gate
+    def __init__(self, max_stick_value=255, thickness = 3):
         super().__init__()
         self.gate = Texture("joystick-gate.png")
         self.thickness = thickness
         self.stick = (128, 128)
+        self.mag = max_stick_value
+        self.stick_colour = (255, 255, 255)
+
+    # return x,y as floats from -1 to 1
+    def _norm_stick(self):
+        half = (self.mag + 1) // 2
+        return (
+            (self.stick[0] - half) / self.mag,
+            (self.stick[1] - half) / self.mag
+        )
 
     def draw(self, frame: pygame.Surface):
         frame = self.gate.draw(frame)
         # draw stick
-        # Note: expects stick coordinates in range [-1, 1]... SMG moment
+        x, y = self._norm_stick()
+        w, h = self.gate.img.get_size()
+        start = (self.gate.pos[0] + w / 2, self.gate.pos[1] + h / 2)
+        end = (start[0] + x * w / 2, start[1] + y * h / 2) # might need to flip y-coord?
         """
         # NOTE: x,y = target_x, target_y
         SCALAR = 58
@@ -172,3 +188,23 @@ class Joystick(LayoutElement):
         data = self._read_data(settings)
         if len(data) < 5:
             print(f"[ERROR] Invalid joystick settings. Expected `x y R G B` but received `{settings}`")
+
+
+class IR(LayoutElement):
+    # x ranges from 0 to 1023 (left to right)
+    # y ranges from 0 to 767 (top to bottom) (lowest puts it at 1023 for some reason)
+    def __init__(self, width=100, x=0, y=0):
+        super().__init__()
+        self.width = width # in px
+        self.pos = (x, y) # top left
+        self.cursor_pos = (0, 0)
+    
+    def draw(self, frame: pygame.Surface):
+        # draw rect for bounding box
+        # draw dot for cursor
+        return frame
+    
+    def reload (self, settings: str):
+        data = self._read_data(settings)
+        if len(data) < 8:
+            print(f"[ERROR] Invalid IR settings. Expected `x y bounding_box_RGB cursor_RGB` but received `{settings}`")

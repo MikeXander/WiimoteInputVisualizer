@@ -1,4 +1,4 @@
-from LayoutElements import LayoutElement, Button, DPad, Joystick
+from LayoutElements import LayoutElement, Button, DPad, Joystick, IR
 from WiimoteDataParser import WiimoteData
 import pygame
 from typing import List
@@ -22,13 +22,14 @@ p2.reload()
 class Layout:
     ANY_REPORT_TYPE = -1
 
-    def __init__(self, elements: List[LayoutElement], config_filename: str, report_type = None):
+    def __init__(self, elements: List[LayoutElement], config_filepath: str, report_type = None):
         self.elements = elements
-        self.config = config_filename
+        self.config = config_filepath
         self.report_type = report_type or Layout.ANY_REPORT_TYPE
 
     def set_inputs(self, data: WiimoteData):
-        # check report type and switch self?
+        # check report type and switch self if it changes? (currently assumes extensions dont change)
+        second_stick = False # first joystick element is primary stick
         for element in self.elements:
             if isinstance(element, Button):
                 element.is_pressed = element.name in data.buttons
@@ -40,7 +41,13 @@ class Layout:
                     "LEFT" in data.buttons
                 )
             elif isinstance(element, Joystick):
-                element.stick = data.stick
+                if second_stick:
+                    element.stick = data.rstick
+                else:
+                    element.stick = data.stick
+                    second_stick = True
+            elif isinstance(element, IR):
+                element.cursor_pos = data.ir
     
     def draw(self, frame: pygame.Surface):
         for element in self.elements:
@@ -56,7 +63,7 @@ class Layout:
 
 
 class WiimoteLayout(Layout):
-    def __init__(self):
+    def __init__(self, config_filepath: str = "./Layouts/wiimote.layout"):
         super().__init__([
             Button("A"),
             Button("B"),
@@ -65,8 +72,50 @@ class WiimoteLayout(Layout):
             Button("+"),
             Button("-"),
             Button("HOME"),
-            DPad()
+            DPad(),
+            IR()
         ],
-        "./Layouts/wiimote.layout"
+        config_filepath
+        )
+        self.reload()
+
+class NunchukLayout(Layout):
+    def __init__(self, config_filepath: str = "./Layouts/nunchuk.layout"):
+        super().__init__([
+            Button("A"),
+            Button("B"),
+            Button("1"),
+            Button("2"),
+            Button("+"),
+            Button("-"),
+            Button("HOME"),
+            DPad(),
+            Button("C"),
+            Button("Z"),
+            Joystick()
+        ],
+        config_filepath
+        )
+        self.reload()
+
+class ClassicLayout(Layout):
+    def __init__(self, config_filepath: str = "./Layouts/classic.layout"):
+        super().__init__([
+            Button("A"),
+            Button("B"),
+            Button("X"),
+            Button("Y"),
+            Button("L"),
+            Button("ZL"),
+            Button("R"),
+            Button("ZR"),
+            Button("+"),
+            Button("-"),
+            Button("HOME"),
+            DPad(),
+            Joystick(63),
+            Joystick(31)
+        ],
+        config_filepath
         )
         self.reload()

@@ -1,0 +1,14 @@
+290 20 255 255 255              A: xyRGB
+390 20 255 255 255              B: xyRGB
+-1 -1 255 255 255               X: xyRGB
+-1 -1 255 255 255               Y: xyRGB
+-1 -1 255 255 255               L: xyRGB
+-1 -1 255 255 255               ZL: xyRGB
+-1 -1 255 255 255               R: xyRGB
+-1 -1 255 255 255               ZR: xyRGB
+-1 -1 255 255 255               +: xyRGB
+-1 -1 255 255 255               -: xyRGB
+-1 -1 255 255 255               HOME: xyRGB
+0 180 125 255 255 255           DPAD: rotation xyRGB
+1 50 60 255 255 255 255 255 255 Left Stick: enable_bounding_box xy gate_RGB stick_RGB
+0 50 60 255 255 255 255 255 210 Right Stick: enable_bounding_box xy gate_RGB stick_RGB

@@ -8,7 +8,9 @@ encoder = Encoder(
 
 encoder.save(
     input_filename = "_inputs.csv",
-    layout = WiimoteLayout(),
+    layouts = [
+        WiimoteLayout("./Layouts/wiimote.layout")
+    ],
     output_filename = "output.mp4",
     codec = "mp4v",
     fps = 60

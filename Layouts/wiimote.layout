@@ -1,8 +1,8 @@
-100 1 100 255 255       A: xyRGB
--1 -1 255 255 255     B: xyRGB
-175 1 255 255 255       1: xyRGB
-225 1 255 255 255       2: xyRGB
-175 100 255 255 255     +: xyRGB
-225 100 255 255 255     -: xyRGB
-275 1 255 255 255       HOME: xyRGB
-3 1 1 -1 255 255       DPAD: rotation xyRGB
+100 1 100 255 255               A: xyRGB
+-1 -1 255 255 255               B: xyRGB
+175 1 255 255 255               1: xyRGB
+225 1 255 255 255               2: xyRGB
+175 100 255 255 255             +: xyRGB
+225 100 255 255 255             -: xyRGB
+275 1 255 255 255               HOME: xyRGB
+3 1 1 -1 255 255                DPAD: rotation xyRGB

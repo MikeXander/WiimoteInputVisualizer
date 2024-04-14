@@ -91,21 +91,24 @@ class Encoder:
         self.frame = pygame.surfarray.make_surface(arr)
 
     # preview what it looks like
-    def playback(self, input_filename: str, layouts: List[Layout], fps = 60):
+    def playback(self, input_filename: str, fps = 60):
         data = [] # read file
         with open(input_filename, 'r') as f:
             data = f.readlines()
+        first_frame = WiimoteData.Parse(data[1])[0].frame
+        total_frames = WiimoteData.Parse(data[-1])[0].frame - first_frame
         for line in data[1:]:
             start = time()
             wiimotes = WiimoteData.Parse(line)
+            print(f"Playback frame: {wiimotes[0].frame - first_frame} / {total_frames}", end='\r', flush=True)
             self.new_frame(wiimotes)
             self.display()
             sleep(max(1/fps - (time() - start), 0))
-        print("Playback complete.")
+        print("\nPlayback complete.")
         
     # can use "XVID" codec for avi
     def save(self, input_filename: str, output_filename = "output.mp4", codec = "mp4v", fps = 60):
-        print("Encoding inputs as video...", end=' ')
+        print(f"Saving inputs as video @ {fps}fps to \"{output_filename}\"...", end=' ')
         fourcc = cv2.VideoWriter_fourcc(*codec)
         out = cv2.VideoWriter(output_filename, fourcc, fps, self.size)
 
@@ -118,7 +121,7 @@ class Encoder:
         total_frames = WiimoteData.Parse(data[-1])[0].frame - first_frame
         for line in data[1:]: # skip header
             wiimotes = WiimoteData.Parse(line)
-            print(f"frame: {wiimotes[0].frame - first_frame} / {total_frames}", end='\r', flush=True)
+            print(f"Encoding frame: {wiimotes[0].frame - first_frame} / {total_frames}", end='\r', flush=True)
             self.new_frame(wiimotes)
             self.display() # show it while encoding
 
@@ -129,4 +132,4 @@ class Encoder:
             frame = np.rot90(frame)
             out.write(frame)
         out.release()
-        print("\nSaved to " + output_filename)
+        print("\nEncoding complete.")

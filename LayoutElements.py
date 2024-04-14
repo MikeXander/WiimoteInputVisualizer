@@ -1,4 +1,5 @@
 import pygame
+from math import sin, cos, atan2
 
 # TODO
 # 1. joystick draw stick
@@ -88,8 +89,7 @@ class Button(LayoutElement):
     def reload(self, settings: str):
         data = self._read_data(settings)
         if len(data) < 5:
-            print(f"[ERROR] Invalid button settings. Expected `x y R G B` but received `{settings}`")
-            return
+            raise ValueError(f"Invalid button settings. Expected `x y R G B` but received `{settings}`")
         pos = (data[0], data[1])
         colour = (data[2], data[3], data[4])
         self.pressed.reload(pos, colour)
@@ -119,8 +119,7 @@ class DPad(LayoutElement):
     def reload(self, settings: str):
         data = self._read_data(settings)
         if len(data) < 6:
-            print(f"[ERROR] Invalid dpad settings. Expected `rotation x y R G B` but received `{settings}`")
-            return
+            raise ValueError(f"Invalid dpad settings. Expected `rotation x y R G B` but received `{settings}`")
         self.rotation = data[0]
         pos = (data[1], data[2])
         colour = (data[3], data[4], data[5])
@@ -132,16 +131,17 @@ class Joystick(LayoutElement):
     # Expects joystick values to range from 0 to max_stick_value
     # This will be used to normalize the stick and draw the line
     # (0,0) will be drawn on the bottom left edge of the joystick-gate
-    def __init__(self, max_stick_value=255, thickness = 3):
+    def __init__(self, max_stick_value=255, thickness = 1.5):
         super().__init__()
         self.gate = Texture("joystick-gate.png")
         self.thickness = thickness
         self.stick = (128, 128)
         self.mag = max_stick_value
         self.stick_colour = (255, 255, 255)
+        self.enablebb = False
 
     # return x,y as floats from -1 to 1
-    def _norm_stick(self):
+    def get_norm_stick(self):
         half = (self.mag + 1) // 2
         return (
             (self.stick[0] - half) / self.mag,
@@ -150,44 +150,63 @@ class Joystick(LayoutElement):
 
     def draw(self, frame: pygame.Surface):
         frame = self.gate.draw(frame)
-        # draw stick
-        x, y = self._norm_stick()
+
+        # setup coordinates
+        x, y = self.get_norm_stick()
         w, h = self.gate.img.get_size()
         start = (self.gate.pos[0] + w / 2, self.gate.pos[1] + h / 2)
-        end = (start[0] + x * w / 2, start[1] + y * h / 2) # might need to flip y-coord?
-        """
-        # NOTE: x,y = target_x, target_y
-        SCALAR = 58
-        global LOCATION
-        start = (LOCATION["JOYSTICK"][0] + 62, LOCATION["JOYSTICK"][0] + 78)#98)
-        end = (int(x * SCALAR) + start[0], int(-y * SCALAR) + start[1])
-        WHITE = pygame.Color(255,255,255)
-        #pygame.draw.aaline(frame, WHITE, start, end)
 
-        # draw diagonals around the start and end location
-        # a lot of these diagonals end up overlapping (slow)
-        offsets = []
-        for i in range(1, width):
-            for j in range(i, -1, -1):
-                offsets.extend([
-                    (j, j-i),
-                    (-j, i-j),
-                    (j, i-j),
-                    (-j, j-i)
-                ])
+        # need to flip y-coord
+        # also not sure why it's not w/2, h/2...
+        end = (start[0] + x * w, start[1] - y * h)
+
+        if self.enablbb: # draw the boundingbox outside what the stick will draw
+            posx, posy = self.gate.pos
+            offset = 2
+            pygame.draw.rect(
+                frame,
+                self.gate.colour,
+                pygame.Rect((posx - offset, posy - offset), (w + 2 * offset, h + 2 * offset)),
+                1
+            )
         
-        for x_offset, y_offset in offsets:
-            start_offset = (start[0] + x_offset, start[1] + y_offset)
-            end_offset = (end[0] + x_offset, end[1] + y_offset)
-            pygame.draw.aaline(frame, WHITE, start_offset, end_offset)
-        
+        # draw the stick
+        # draw aaline with thickness: https://stackoverflow.com/questions/30578068/pygame-draw-anti-aliased-thick-line
+        center = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+        length = ((end[0] - start[0])**2 + (end[1] - start[1])**2)**0.5
+        angle = atan2(start[1] - end[1], start[0] - end[0])
+        UL = (
+            center[0] + (length/2.) * cos(angle) - self.thickness * sin(angle),
+            center[1] + self.thickness * cos(angle) + (length/2.) * sin(angle)
+        )
+        UR = (
+            center[0] - (length/2.) * cos(angle) - self.thickness * sin(angle),
+            center[1] + self.thickness * cos(angle) - (length/2.) * sin(angle)
+        )
+        BL = (
+            center[0] + (length/2.) * cos(angle) + self.thickness * sin(angle),
+            center[1] - self.thickness * cos(angle) + (length/2.) * sin(angle)
+        )
+        BR = (
+            center[0] - (length/2.) * cos(angle) + self.thickness * sin(angle),
+            center[1] - self.thickness * cos(angle) - (length/2.) * sin(angle)
+        )
+        pygame.draw.polygon(frame, self.stick_colour, (UL, UR, BR, BL))
+
+        # draw circles on either end of the stick to round it off
+        pygame.draw.circle(frame, self.stick_colour, start, self.thickness)
+        pygame.draw.circle(frame, self.stick_colour, end, 1.25 * self.thickness)
+
         return frame
-        """
 
     def reload(self, settings: str):
         data = self._read_data(settings)
         if len(data) < 5:
-            print(f"[ERROR] Invalid joystick settings. Expected `x y R G B` but received `{settings}`")
+            raise ValueError(f"Invalid joystick settings. Expected `enable_bounding_box x y R G B` but received `{settings}`")
+        self.enablbb = bool(int(data[0]))
+        pos = (data[1], data[2])
+        colour = (data[3], data[4], data[5])
+        self.gate.reload(pos, colour)
 
 
 class IR(LayoutElement):
@@ -207,4 +226,4 @@ class IR(LayoutElement):
     def reload (self, settings: str):
         data = self._read_data(settings)
         if len(data) < 8:
-            print(f"[ERROR] Invalid IR settings. Expected `x y bounding_box_RGB cursor_RGB` but received `{settings}`")
+            raise ValueError(f"Invalid IR settings. Expected `x y bounding_box_RGB cursor_RGB` but received `{settings}`")

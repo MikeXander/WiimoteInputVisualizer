@@ -1,7 +1,7 @@
-from WiimoteInputEncoder import Encoder
+from WiimoteInputEncoder import Encoder2D
 from Layouts import *
 
-encoder = Encoder(
+encoder = Encoder2D(
     window_size = (550, 250),
     background_colour = (0, 0, 0)
 )

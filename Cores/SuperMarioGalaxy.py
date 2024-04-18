@@ -11,24 +11,27 @@ dme.read_int = lambda x: intb(dme.read_bytes(x, 4))
 # This is the important function for the core to output
 # returns the list of controller data to visualize inputs for
 def get_controller_data() -> List[WiimoteData]:
-    stage_time = get_stage_time()
-    p1_btns, p2_btns = get_buttons()
-    return [
-        WiimoteData(
+    try:
+        stage_time = get_stage_time()
+        p1_btns, p2_btns = get_buttons()
+        P1 = WiimoteData(
             frame = stage_time,
             id = 4,
             extension_type = WiimoteTypes.NUNCHUK,
             buttons = set(p1_btns),
             acc = get_wiimote_accel(),
             stick = get_stick(True)
-        ),
-        WiimoteData(
+        )
+        P2 = WiimoteData(
             frame = stage_time,
             id = 5,
             extension_type = WiimoteTypes.WIIMOTE,
             buttons = p2_btns
         )
-    ]
+        return [P1, P2]
+    except Exception as err:
+        print("Failed to read from Dolphin")
+        raise err
 
 # returns a string of text with extra info to draw to the screen
 def get_additional_data() -> str:

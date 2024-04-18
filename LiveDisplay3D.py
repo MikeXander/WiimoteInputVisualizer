@@ -1,4 +1,4 @@
-from Cores.SuperMarioGalaxy import wiimote_accel
+from Cores.SuperMarioGalaxy import get_controller_data
 import pygame
 from pygame.locals import *
 import time
@@ -7,7 +7,10 @@ from math import pi, acos, atan2
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OBJLoader import *
-from WiimoteInputEncoder import start_encoding, save_frame, stop_encoding
+
+def wiimote_accel():
+    P1, P2 = get_controller_data()
+    return {"X":P1.acc[0]-512,"Y":P1.acc[1]-512,"Z":P1.acc[2]-512}
 
 UPRIGHT = 0
 SIDEWAYS = 1
@@ -248,7 +251,8 @@ while True:
         for axis in "XYZ":
             if abs(accel[axis] - new_accel[axis]) > TOLERANCE:
                 accel[axis] = new_accel[axis]
-    print(accel, f"%.2f" % ((accel['X']**2 + accel['Y']**2 + accel['Z']**2)**0.5))
+    #print(accel['X'],accel['X'] - new_accel['X'])
+    #print(accel, f"%.2f" % ((accel['X']**2 + accel['Y']**2 + accel['Z']**2)**0.5))
 
     # noise filter
     for k in accel.keys():
@@ -269,6 +273,7 @@ while True:
     else:
         yaw, pitch, roll = other_solution(X.value, Y.value, Z.value)
     #print(f"%4d %4d %4d" % (round(yaw), round(pitch), round(Roll.value)))
+    print(f"%4d %4d %4d" % (round(Yaw.target), round(Pitch.target), round(Roll.target)))
 
     # setup display
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -283,3 +288,18 @@ while True:
     time.sleep(max(1/FPS - (time.time() - start), 0))
 
 pygame.display.quit()
+
+# New Version
+"""
+from Cores.SuperMarioGalaxy import get_controller_data
+from WiimoteInputEncoder import Encoder3D
+from WiimoteDataParser import WiimoteType3D
+
+FPS = 60
+encoder = Encoder3D()
+encoder.set_wiimote_type(WiimoteType3D.UPRIGHT)
+
+while encoder.display(FPS):
+    P1, P2 = get_controller_data()
+    encoder.new_frame(P1)
+"""

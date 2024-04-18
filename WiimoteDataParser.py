@@ -20,6 +20,10 @@ class WiimoteTypes:
     NUNCHUK = 1 # ir, acc, stick, nacc
     CLASSIC = 2 # stick, rstick
 
+class WiimoteType3D:
+    UPRIGHT = 0
+    SIDEWAYS = 1
+
 def read_ints(space_separated_ints: str):
     return tuple(map(int, space_separated_ints.split()))
 

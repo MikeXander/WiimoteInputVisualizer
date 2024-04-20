@@ -24,24 +24,36 @@ class Encoder:
         self.size = window_size
         self.background_colour = background_colour
         self.last_display_time = time()
+        self.outstream = None
         pygame.init()
         pygame.display.set_caption("Wiimote Input Visualizer")
+        self.tick = 0
 
     # enforce displaying at specific FPS
     # return true if update successful, false if pygame was closed
     def display(self, FPS = 60):
         current_time = time()
         sleep(max(1/FPS - (current_time - self.last_display_time), 0))
-        self.last_display_time = current_time
-
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return False
             
+        if self.outstream is not None: # Encoding
+            # convert pygame screen to opencv2 screen for output
+            frame = pygame.surfarray.array3d(self.frame)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) 
+            frame = np.fliplr(frame)
+            frame = np.rot90(frame)
+            self.outstream.write(frame)
+
+        self.last_display_time = time()
         return True
     
     def start_recording(self):
+        # 3D encoding will require a frame buffer
+        # https://stackoverflow.com/questions/53748691/how-do-i-make-opengl-draw-do-a-non-display-surface-in-pygame
         pass
 
     def stop_recording(self):
@@ -58,6 +70,8 @@ class Encoder2D(Encoder):
         super().__init__(window_size, background_colour)
         self.layouts = []
         self.sent_font_warn = False
+        self.outstream = None
+        self.output_name = "out.mp4"
 
         self.screen = pygame.display.set_mode(self.size)
         self.frame = pygame.Surface(self.size) # default blank frame
@@ -91,6 +105,12 @@ class Encoder2D(Encoder):
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r and pygame.key.get_mods() & pygame.KMOD_CTRL:
                     self.reload_layouts()
+                elif event.key == pygame.K_s and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                    if self.outstream is None:
+                        self.start_recording(FPS = FPS)
+                    else:
+                        self.stop_recording()
+                        self.outstream = None
 
         self.screen.blit(self.frame, (0, 0))
         pygame.display.update()
@@ -141,16 +161,24 @@ class Encoder2D(Encoder):
             sleep(max(1/fps - (time() - start), 0))
         print("\nPlayback complete.")
         
+    def start_recording(self, output_filename = "output.mp4", codec = "mp4v", FPS = 60):
+        fourcc = cv2.VideoWriter_fourcc(*codec)
+        self.outstream = cv2.VideoWriter(output_filename, fourcc, FPS, self.size)
+        self.output_name = output_filename
+        print(f"Saving inputs as video @ {FPS}fps to \"{output_filename}\"...", flush=True)
+
+    def stop_recording(self):
+        self.outstream.release()
+        print(f"{self.output_name} saved.")
+    
     # can use "XVID" codec for avi
     def save(self, input_filename: str, output_filename = "output.mp4", codec = "mp4v", fps = 60):
-        print(f"Saving inputs as video @ {fps}fps to \"{output_filename}\"...", end=' ')
-        fourcc = cv2.VideoWriter_fourcc(*codec)
-        out = cv2.VideoWriter(output_filename, fourcc, fps, self.size)
-
         data = [] # read file
         with open(input_filename, 'r') as f:
             data = f.readlines()
         print("Inputs loaded.")
+
+        self.start_recording(output_filename, codec, fps)
 
         first_frame = WiimoteData.Parse(data[1])[0].frame
         total_frames = WiimoteData.Parse(data[-1])[0].frame - first_frame
@@ -160,14 +188,8 @@ class Encoder2D(Encoder):
             self.new_frame(wiimotes)
             self.display() # show it while encoding
 
-            # convert pygame screen to opencv2 screen for output
-            frame = pygame.surfarray.array3d(self.frame)
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) 
-            frame = np.fliplr(frame)
-            frame = np.rot90(frame)
-            out.write(frame)
-        out.release()
-        print("\nEncoding complete.")
+        print()
+        self.stop_recording()
 
 
 # For smoothing out the 3D visualizer
@@ -274,6 +296,7 @@ class Encoder3D(Encoder):
             self.angle[0].target = -atan2(y, x) * 180/pi - 90
             self.angle[1].target = (acos(z / rho) - pi/2) * 180/pi
             self.angle[2].value = 0
+            self.angle[2].target = 0
 
             # PID is struggling when it switches from 89 to -270
             # this makes it so the flip point is when it's upsidedown
@@ -286,12 +309,10 @@ class Encoder3D(Encoder):
             if self.angle[0].target == -90 and abs(self.angle[1].target) == 90:
                 self.angle[0].target = 0
 
-            self.angle[0].step()
-            self.angle[1].step()
-
         elif self.wmtype == WiimoteType3D.SIDEWAYS:
             self.angle[0].target = -atan2(y, x) * 180/pi - 90
             self.angle[1].value = 0
+            self.angle[1].target = 0
             self.angle[2].target = -atan2(z, x) * 180/pi + 180
 
             # PID is struggling when Yaw switches from 89 to -270
@@ -315,9 +336,6 @@ class Encoder3D(Encoder):
             elif abs(self.angle[0].target - 0) <= EPSILON and self.angle[2].target == 270:
                 self.angle[0].target = -270
 
-            self.angle[0].step()
-            self.angle[2].step()
-
         else:
             # https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf
             # if I take the time to do the lin alg and get yaw this will probably
@@ -325,10 +343,12 @@ class Encoder3D(Encoder):
             MIU = 0.001
             sign = 1 if z > 0 else -1 
             self.angle[0].value = 0
+            self.angle[0].target = 0
             self.angle[1].target = -atan2(y, sign * (z*z + MIU*x*x)**0.5) * 180/pi - 90
             self.angle[2].target = atan2(x, (y*y + z*z)**0.5) * 180/pi
-            self.angle[1].step()
-            self.angle[2].step()
+        
+        for pid in self.angle:
+            pid.step()
 
     def new_frame(self, wiimote: WiimoteData):
         # ignore when the game drops packets (problem with real wiimotes)
@@ -350,6 +370,7 @@ class Encoder3D(Encoder):
         #print(f"X: % 3d Y % 3d Z % 3d (%.2f)" % (x,y,z,m))
         self.update_angles()
         #print(f"%4d %4d %4d" % tuple(map(lambda pid: round(pid.target), self.angle)))
+        #print(f"%d" % round(self.angle[0].errTotal))
 
     def display(self, FPS = 60):
         if self.wiimote is None:
@@ -358,10 +379,10 @@ class Encoder3D(Encoder):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         glTranslate(0, -1, -8)
-        yaw, pitch, roll = map(lambda pid: pid.value, self.accel)
-        glRotate(round(yaw), 0, 0, 1)
-        glRotate(round(pitch), 1, 0, 0)
-        glRotate(round(roll), 0, 1, 0)
+        yaw, pitch, roll = map(lambda pid: round(pid.value), self.angle)
+        glRotate(yaw, 0, 0, 1)
+        glRotate(pitch, 1, 0, 0)
+        glRotate(roll, 0, 1, 0)
         self.wiimote.render()
         pygame.display.flip()
         return super().display(FPS)

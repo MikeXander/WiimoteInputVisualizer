@@ -14,6 +14,8 @@ Currently this is being reworked, the instructions below are partially true, and
 4. Run `SaveVideo.py` (you can edit this script too for a few settings)
 To edit the visualizer, you can replace the images in the `Textures` folder (keep the names), and edit `Layouts/wiimote.layout` (these are just text files, note that a negative position will hide a button).
 
+Note: during live display (2D), pressing Ctrl+R will reload the layout, and Ctrl+S will start recording a video (press again to stop recording).
+
 ### Old Instructions
 To export the input data, you need [Dolphin 5.0 - Lua Core](https://github.com/SwareJonge/Dolphin-Lua-Core/releases). Place `SMG_Core.lua` and `json.lua` in the same folder as `Dolphin.exe`, and place the other scripts in `/Sys/Scripts/`. Then run `SMG_Export_Inputs.lua` from within Dolphin-Lua. Some sample data produced by the lua scripts has been provided.
 
@@ -32,6 +34,7 @@ There are 3 different button press types that display button presses slightly di
   - opencv-python
   - pillow
   - dolphin-memory-engine
+  - pyopengl
 - Video editing software to combine the overlay and gameplay
 
 ### Extending Use To Other Games

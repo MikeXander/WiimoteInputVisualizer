@@ -31,14 +31,15 @@ class Encoder:
 
     # enforce displaying at specific FPS
     # return true if update successful, false if pygame was closed
-    def display(self, FPS = 60):
+    def display(self, FPS = 60, skip_event_check = False):
         current_time = time()
         sleep(max(1/FPS - (current_time - self.last_display_time), 0))
         
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return False
+        if not skip_event_check:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return False
             
         if self.outstream is not None: # Encoding
             # convert pygame screen to opencv2 screen for output
@@ -70,36 +71,58 @@ class Encoder2D(Encoder):
         super().__init__(window_size, background_colour)
         self.layouts = []
         self.sent_font_warn = False
+        self.mismatch_layout_warn = False
         self.outstream = None
         self.output_name = "out.mp4"
 
-        self.screen = pygame.display.set_mode(self.size)
+        self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE)
         self.frame = pygame.Surface(self.size) # default blank frame
         self.frame.fill(self.background_colour)
 
     # can't be passed to init because the layouts require pygame to already be initialized
     def set_layouts(self, layouts: List[Layout]):
         self.layouts = layouts
+        self.reload_layouts() # fixes screen size but loads layouts twice initially
 
+    # this will use the window size and background colour of the LAST VALID layout
     def reload_layouts(self):
+        new_size = None
+        new_colour = None
         for layout in self.layouts:
-            layout.reload()
-
+            size, col = layout.reload()
+            if size is not None:
+                new_size = size
+            if col is not None:
+                new_colour = col
+        if new_size:
+            self.size = new_size
+            self.screen = pygame.display.set_mode(new_size)
+        if new_colour:
+            self.background_colour = new_colour
+        
     def new_frame(self, wiimotes: List[WiimoteData]):
         self.frame = pygame.Surface(self.size)
         self.frame.fill(self.background_colour)
+
         if len(wiimotes) != len(self.layouts):
-            print(f"[ERROR] number of controllers ({len(wiimotes)}) mismatches number of layouts ({len(self.layouts)}). Drawing skipped.")
-            return
+            if not self.mismatch_layout_warn:
+                self.mismatch_layout_warn = True
+                print(f"[WARNING] number of controllers ({len(wiimotes)}) mismatches number of layouts ({len(self.layouts)}). Unused layouts will be hidden.")
+            while len(self.layouts) < len(wiimotes):
+                self.layouts.append(Layout())
+            while len(wiimotes) < len(self.layouts):
+                wiimotes.append(None)
+
         for layout, wm in zip(self.layouts, wiimotes):
-            layout.set_inputs(wm)
-            self.frame = layout.draw(self.frame)
+            if wm:
+                layout.set_inputs(wm)
+                self.frame = layout.draw(self.frame)
 
     # returns True if update was successful, False if pygame was closed
     def display(self, FPS = 60) -> bool:
         # for lack of a better place to check, since this should be called each tick
         for event in pygame.event.get():
-            if event.type == pygame.QUIT: # need to check here too otherwise it wont close
+            if event.type == pygame.QUIT: # need to check here otherwise it wont close ?
                 pygame.quit()
                 return False
             elif event.type == pygame.KEYDOWN:
@@ -114,7 +137,7 @@ class Encoder2D(Encoder):
 
         self.screen.blit(self.frame, (0, 0))
         pygame.display.update()
-        return super().display(FPS)
+        return super().display(FPS, True)
 
     # position is measured from the top left
     def add_text(self, text: str, pos: Tuple[int] = (0,0), colour: Tuple[int] = (255, 255, 255, 255), font: str = "Delfino.ttf", size: int = 16):

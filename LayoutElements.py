@@ -74,10 +74,12 @@ class LayoutElement:
 
 
 class Button(LayoutElement):
-    def __init__(self, name):
+    def __init__(self, name, texture_name = None):
         super().__init__()
-        self.pressed = Texture(name + "-pressed.png")
-        self.released = Texture(name + "-released.png")
+        if texture_name is None:
+            texture_name = name
+        self.pressed = Texture(texture_name + "-pressed.png")
+        self.released = Texture(texture_name + "-released.png")
         self.name = name
         self.is_pressed = False
     

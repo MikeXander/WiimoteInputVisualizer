@@ -1,14 +1,15 @@
-290 20 255 255 255              A: xyRGB
-390 20 255 255 255              B: xyRGB
--1 -1 255 255 255               X: xyRGB
--1 -1 255 255 255               Y: xyRGB
--1 -1 255 255 255               L: xyRGB
--1 -1 255 255 255               ZL: xyRGB
--1 -1 255 255 255               R: xyRGB
--1 -1 255 255 255               ZR: xyRGB
--1 -1 255 255 255               +: xyRGB
--1 -1 255 255 255               -: xyRGB
--1 -1 255 255 255               HOME: xyRGB
-0 180 125 255 255 255           DPAD: rotation xyRGB
-1 50 60 255 255 255 255 255 255 Left Stick: enable_bounding_box xy gate_RGB stick_RGB
-0 50 60 255 255 255 255 255 210 Right Stick: enable_bounding_box xy gate_RGB stick_RGB
+620 380 0 0 0                       Window: width height background_RGB
+510 100 255 255 255                   A: xyRGB
+475 140 255 255 255                   B: xyRGB
+475 60 255 255 255                   X: xyRGB
+440 100 255 255 255                   Y: xyRGB
+100 40 255 255 255                  L: xyRGB
+100 0 255 255 255                   ZL: xyRGB
+340 40 255 255 255                  R: xyRGB
+340 0 255 255 255                   ZR: xyRGB
+270 100 255 255 255                 +: xyRGB
+170 100 255 255 255                 -: xyRGB
+220 100 255 255 255                 HOME: xyRGB
+0 0 100 255 255 255                 DPAD: rotation xyRGB
+1 100 220 255 255 255 255 255 255   Left Stick: enable_bounding_box xy gate_RGB stick_RGB
+1 340 220 255 255 255 255 255 210   Right Stick: enable_bounding_box xy gate_RGB stick_RGB

@@ -1,8 +1,9 @@
-100 1 100 255 255               A: xyRGB
--1 -1 255 255 255               B: xyRGB
-175 1 255 255 255               1: xyRGB
-225 1 255 255 255               2: xyRGB
-175 100 255 255 255             +: xyRGB
-225 100 255 255 255             -: xyRGB
-275 1 255 255 255               HOME: xyRGB
-3 1 1 -1 255 255                DPAD: rotation xyRGB
+600 220 0 0 0           Window: width height background_RGB
+120 50 255 255 255      A: xyRGB
+200 50 255 255 255      B: xyRGB
+430 50 255 255 255      1: xyRGB
+480 50 255 255 255      2: xyRGB
+320 0 255 255 255       +: xyRGB
+320 100 255 255 255     -: xyRGB
+320 50 255 255 255      HOME: xyRGB
+3 0 50 255 255 255      DPAD: rotation xyRGB

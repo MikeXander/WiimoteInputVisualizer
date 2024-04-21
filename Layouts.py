@@ -13,7 +13,6 @@ from typing import List
 p1 = WiimoteLayout()
 # or
 p2 = Layout([Button("A"), DPad()], "my_controller.layout")
-p2.reload()
 """
 
 # A collection of LayoutElements (a controller button layout)
@@ -22,10 +21,11 @@ p2.reload()
 class Layout:
     ANY_REPORT_TYPE = -1
 
-    def __init__(self, elements: List[LayoutElement], config_filepath: str, report_type = None):
+    def __init__(self, elements: List[LayoutElement] = [], config_filepath: str = "", report_type = None):
         self.elements = elements
         self.config = config_filepath
         self.report_type = report_type or Layout.ANY_REPORT_TYPE
+        self.reload()
 
     def set_inputs(self, data: WiimoteData):
         # check report type and switch self if it changes? (currently assumes extensions dont change)
@@ -54,13 +54,34 @@ class Layout:
             frame = element.draw(frame)
         return frame
 
+    # first line of the layout file is window size and background colour
+    # returns the data from the first line: (width, height), (r, g, b)
+    # returns None, None if there's an error
     def reload(self):
+        if len(self.elements) == 0 or self.config == "":
+            return None, None
+        
         config = []
         with open(self.config, 'r') as f:
-            config = filter(lambda line: line != '\n', f.readlines())
-        for element, settings in zip(self.elements, config):
-            element.reload(settings)
-
+            config = list(filter(lambda line: line != '\n', f.readlines()))
+        
+        if len(config) != len(self.elements) + 1:
+            print(f"[ERROR] Config file {self.config} has incorrect number of lines")
+            return None, None
+        
+        for element, settings in zip(self.elements, config[1:]):
+            element.reload(settings)    
+        
+        data = LayoutElement._read_data(config[0])
+        if len(data) < 5:
+            return None, None
+        size = (data[0], data[1])
+        if min(size) <= 0:
+            size = None
+        bgcol = (data[2], data[3], data[4])
+        if min(size) < 0:
+            bgcol = None
+        return size, bgcol
 
 class WiimoteLayout(Layout):
     def __init__(self, config_filepath: str = "./Layouts/wiimote.layout"):
@@ -72,12 +93,10 @@ class WiimoteLayout(Layout):
             Button("+"),
             Button("-"),
             Button("HOME"),
-            DPad(),
-            IR()
+            DPad()
         ],
         config_filepath
         )
-        self.reload()
 
 class NunchukLayout(Layout):
     def __init__(self, config_filepath: str = "./Layouts/nunchuk.layout"):
@@ -96,13 +115,12 @@ class NunchukLayout(Layout):
         ],
         config_filepath
         )
-        self.reload()
 
 class ClassicLayout(Layout):
     def __init__(self, config_filepath: str = "./Layouts/classic.layout"):
         super().__init__([
-            Button("A"),
-            Button("B"),
+            Button("A", "A2"),
+            Button("B", "B2"),
             Button("X"),
             Button("Y"),
             Button("L"),
@@ -118,4 +136,3 @@ class ClassicLayout(Layout):
         ],
         config_filepath
         )
-        self.reload()

@@ -1,3 +1,4 @@
+550 280 0 0 0                       Window: width height background_RGB
 290 20 100 255 255                  A: xyRGB
 390 20 100 255 255                  B: xyRGB
 -1 -1 255 255 255                   1: xyRGB

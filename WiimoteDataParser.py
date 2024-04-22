@@ -45,6 +45,7 @@ class WiimoteData:
         self.id = id
         self.type = extension_type
         self.buttons = buttons or set() 
+        self.buttons = set(self.buttons) # enforce type
         self.ir = ir
         self.acc = acc
         self.stick = stick

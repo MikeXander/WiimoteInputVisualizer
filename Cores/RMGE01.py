@@ -4,7 +4,6 @@ from sys import path
 path.insert(0, '..')
 from WiimoteDataParser import WiimoteTypes, WiimoteData
 
-dme.hook() # requires Dolphin is already open
 intb = lambda x: int.from_bytes(x, "big")
 dme.read_int = lambda x: intb(dme.read_bytes(x, 4))
 
@@ -37,7 +36,6 @@ def get_controller_data() -> List[WiimoteData]:
 def get_additional_data() -> str:
     vx, vy, vz = speed()
     vxz = (vx**2 + vz**2)**0.5
-    
     stick = "x: %d\ny: %d" % get_stick(True)
     hspd = "HSpd: %.3f" % round(vxz, 3)
     _, vy, _ = base_velocity()

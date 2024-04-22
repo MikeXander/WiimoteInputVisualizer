@@ -1,28 +1,26 @@
 import dolphin_memory_engine as dme
-
-dme.hook()
-GAMEID = dme.read_bytes(0x0, 6).decode("utf-8") # requires Dolphin is already open
+from sys import path
+path.insert(0, '..')
+from WiimoteDataParser import WiimoteTypes, WiimoteData
 
 intb = lambda x: int.from_bytes(x, "big")
-dme.read_int = lambda x: intb(dme.read_bytes(x, 4))
 
-# input coords aand processed value as a float from -1.0 to 1.0 inclusive
-def stick():
-    return {
-        "X_processed": dme.read_float(0xB38A8C),
-        "Y_processed": dme.read_float(0xB38A90)
-    }
+# input coords (0-255) or processed value (float from -1.0 to 1.0)
+def get_stick(get_stick_coords: bool):
+    if get_stick_coords:
+        return (dme.read_byte(0x792D10) + 128) % 256, (dme.read_byte(0x792D11) + 128) % 256
+    return dme.read_float(0xB38A8C), dme.read_float(0xB38A90)
 
-# accel values from -512 to 511
+# accel values from 0 to 1023
 def wiimote_accel():
     offset = 0x792C82
     adjust = lambda x: x if x <= 511 else -1 * (0xFFFF - x + 1)
-    read_accel = lambda addr: adjust(intb(dme.read_bytes(addr, 2)))
-    return {
-        "X": read_accel(offset + 0x0),
-        "Y": read_accel(offset + 0x2),
-        "Z": read_accel(offset + 0x4)
-    }
+    read_accel = lambda addr: adjust(intb(dme.read_bytes(addr, 2))) + 512
+    return (
+        read_accel(offset + 0x0),
+        read_accel(offset + 0x2),
+        read_accel(offset + 0x4)
+    )
 
 # returns the list of buttons being pressed
 # includes all P1 buttons, and only A/B for P2
@@ -50,3 +48,18 @@ def buttons():
     if byte & 0x08: data["P2"].append("A")
     return data
 
+def get_controller_data():
+    btns = buttons()
+    P1 = WiimoteData(
+        id = 4,
+        extension_type = WiimoteTypes.NUNCHUK,
+        buttons = set(btns["P1"]),
+        acc = wiimote_accel(),
+        stick = get_stick(True)
+    )
+    P2 = WiimoteData(
+        id = 5,
+        extension_type = WiimoteTypes.WIIMOTE,
+        buttons = set(btns["P2"])
+    )
+    return [P1, P2]

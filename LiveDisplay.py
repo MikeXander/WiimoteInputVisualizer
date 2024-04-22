@@ -1,6 +1,6 @@
-from Cores.SuperMarioGalaxy import get_controller_data, get_additional_data
 from WiimoteInputEncoder import Encoder2D
 from Layouts import *
+import Dolphin
 
 FPS = 60
 
@@ -14,10 +14,10 @@ encoder.set_layouts([
     WiimoteLayout("./Layouts/smg_p2.layout")
 ])
 
-while encoder.display(FPS):
-    wiimotes = get_controller_data()
+while encoder.display(FPS) and Dolphin.reconnect():
+    wiimotes = Dolphin.get_controller_data()
     encoder.new_frame(wiimotes)
-    text = get_additional_data()
+    text = Dolphin.get_additional_data()
     encoder.add_text(
         text,
         pos = (40, 200),

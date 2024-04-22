@@ -141,6 +141,9 @@ class Encoder2D(Encoder):
 
     # position is measured from the top left
     def add_text(self, text: str, pos: Tuple[int] = (0,0), colour: Tuple[int] = (255, 255, 255, 255), font: str = "Delfino.ttf", size: int = 16):
+        if len(text) == 0:
+            return
+        
         # load font, since this could be called each tick, only give them 1 warning
         # inefficiently tries to construct the font every time
         fnt = None

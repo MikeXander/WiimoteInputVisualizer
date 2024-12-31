@@ -16,11 +16,10 @@ from math import pi, acos, atan2
 # - allow mismatched # of controllers and layouts?
 # - Camera control for 3d
 # - multiple controllers for 3d
-# - Rendering video during live display
 # - move self.frame from Encoder2D to Encoder (+move add text)
 
 class Encoder:
-    def __init__(self, window_size: Tuple[int, int], background_colour = (0,0,0)):
+    def __init__(self, window_size: Tuple[int, int] = (550, 250), background_colour = (0,0,0)):
         self.size = window_size
         self.background_colour = background_colour
         self.last_display_time = time()

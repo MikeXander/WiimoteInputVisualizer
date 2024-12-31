@@ -31,15 +31,15 @@ def read_ints(space_separated_ints: str):
 class WiimoteData:
     def __init__(
             self,
-            frame: int = -1, # this isnt necessarily wiimote data but it's important here
+            frame: int = -1, # this isnt wiimote data but it's important for encoding videos
             id: int = 4, # Wiimotes 1-4 have IDs 4-7
             extension_type: WiimoteTypes = WiimoteTypes.WIIMOTE,
-            buttons: Set[str] = None, # set of uppercase button names that are pressed
-            ir: Tuple[int] = (0, 0),
-            acc: Tuple[int] = (512, 512, 616), # pointing at screen
-            stick: Tuple[int] = (128, 128),
-            nacc: Tuple[int] = (512, 512, 716),
-            rstick: Tuple[int] = (128, 128)
+            buttons: Set[str] = None, # set of uppercase button names that are pressed. Ex: {"A", "B"}
+            ir: Tuple[int] = (0, 0), # range: [0, 1023]
+            acc: Tuple[int] = (512, 512, 616), # range: [0, 1023]
+            stick: Tuple[int] = (128, 128), # range: [0, 255] for nunchuk, [0, 63] for classic controller
+            nacc: Tuple[int] = (512, 512, 716), # range: [0, 1023]
+            rstick: Tuple[int] = (128, 128) # range: [0, 31] for classic controller
         ):
         self.frame = frame
         self.id = id
@@ -54,7 +54,7 @@ class WiimoteData:
 
     # this is for converting 1 line in the csv output
     @ staticmethod
-    def Parse(csv_line: str) -> List[WiimoteData]:
+    def Parse(csv_line: str) -> List[WiimoteData]:#Tuple[List[WiimoteData], str]:
         try:
             data = csv_line.strip().split(',')
             frame = int(data[0])
@@ -96,6 +96,7 @@ class WiimoteData:
                 wmdata.append(wm)
             
             wmdata = sorted(wmdata, key = lambda wm: wm.id) # sort by ID (Wiimote 1 appears first)
-            return wmdata
+            #extradata = "" if i >= len(data) else ','.join(data[i:])
+            return wmdata#, extradata
         except Exception:
             raise ValueError(f"Invalid format parsing wiimote data from `{csv_line}`")

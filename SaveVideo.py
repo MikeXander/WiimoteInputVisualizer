@@ -1,10 +1,7 @@
 from WiimoteInputEncoder import Encoder2D
 from Layouts import *
 
-encoder = Encoder2D(
-    window_size = (550, 250),
-    background_colour = (0, 0, 0)
-)
+encoder = Encoder2D()
 
 encoder.set_layouts([
     NunchukLayout("./Layouts/nunchuk.layout"),
@@ -18,7 +15,7 @@ encoder.playback(
     fps = 5
 )
 
-# save the inputs to a file
+# save the inputs to a video file
 encoder.save(
     input_filename = "./Sample Data/_inputs.csv",
     output_filename = "output.mp4",

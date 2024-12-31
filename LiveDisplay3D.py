@@ -1,4 +1,3 @@
-#from Cores.RMGE01 import get_controller_data
 from WiimoteInputEncoder import Encoder3D
 from WiimoteDataParser import WiimoteType3D
 import Dolphin

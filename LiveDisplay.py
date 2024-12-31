@@ -4,10 +4,7 @@ import Dolphin
 
 FPS = 60
 
-encoder = Encoder2D(
-    window_size = (550, 280),
-    background_colour = (0, 0, 0)
-)
+encoder = Encoder2D()
 
 encoder.set_layouts([
     NunchukLayout("./Layouts/smg_p1.layout"),

@@ -20,5 +20,11 @@ encoder.save(
     input_filename = "./Sample Data/_inputs.csv",
     output_filename = "output.mp4",
     codec = "mp4v",
-    fps = 60
+    fps = 60,
+    text_settings = {
+        "pos": (40, 200),
+        "colour": (255, 255, 255),
+        "font": "Delfino",
+        "size": 25
+    }
 )

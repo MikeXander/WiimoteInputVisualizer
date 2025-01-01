@@ -26,6 +26,22 @@ local file = nil
 local firstInput = true
 local lastFrame = -1
 local wmdata = nil -- {[ControllerID] = "id,extension,data..."}
+local additionalData = ""
+
+-- game-specific additional information to include at the end of the controller data
+-- it will save the result from the final input poll
+-- \\n is turned into \n when encoded with the visualizer
+function getAdditionalData()
+	local gameID = GetGameID()
+	if gameID == "RMGE01" then -- Example: joystick coordinates in SMG1
+		return string.format(
+			"x: %d\\ny: %d",
+			(ReadValue8(0x661210) + 128) % 256,
+            (ReadValue8(0x661211) + 128) % 256
+		)
+	end
+	return ""
+end
 
 function onScriptStart()
 	file = io.open(fileName, "w")
@@ -42,6 +58,7 @@ function onScriptUpdate()
 	local frame = GetFrameCount()
 	if frame < startFrame then
 		SetScreenText("\nHaven't started exporting inputs...")
+		additionalData = getAdditionalData()
 		return
 	elseif endFrame > -1 and endFrame + 1 < frame then
 		SetScreenText("Finished exporting inputs")
@@ -61,7 +78,7 @@ function onScriptUpdate()
 			output = output .. "," .. data
 			n = n + 1
 		end
-		output = string.format("%d,%d%s\n", lastFrame, n, output)
+		output = string.format("%d,%d%s,%s\n", lastFrame, n, output, additionalData)
 		io.write(output)
 		SetScreenText("\nRecording inputs: " .. output)
 		wmdata = {}
@@ -121,6 +138,8 @@ function onScriptUpdate()
 			rx, ry
 		)
 	end
+
+	additionalData = getAdditionalData()
 
 	if frame == endFrame + 1 then
 		CancelScript()

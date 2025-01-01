@@ -54,7 +54,7 @@ class WiimoteData:
 
     # this is for converting 1 line in the csv output
     @ staticmethod
-    def Parse(csv_line: str) -> List[WiimoteData]:#Tuple[List[WiimoteData], str]:
+    def Parse(csv_line: str) -> Tuple[List[WiimoteData], str]:
         try:
             data = csv_line.strip().split(',')
             frame = int(data[0])
@@ -96,7 +96,7 @@ class WiimoteData:
                 wmdata.append(wm)
             
             wmdata = sorted(wmdata, key = lambda wm: wm.id) # sort by ID (Wiimote 1 appears first)
-            #extradata = "" if i >= len(data) else ','.join(data[i:])
-            return wmdata#, extradata
+            extradata = "" if i >= len(data) else ','.join(data[i:]).replace("\\n", "\n")
+            return (wmdata, extradata)
         except Exception:
             raise ValueError(f"Invalid format parsing wiimote data from `{csv_line}`")

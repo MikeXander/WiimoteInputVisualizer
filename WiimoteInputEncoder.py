@@ -173,17 +173,24 @@ class Encoder2D(Encoder):
         self.frame = pygame.surfarray.make_surface(arr)
 
     # preview what it looks like
-    def playback(self, input_filename: str, fps = 60):
+    def playback(self, input_filename: str, fps = 60, text_settings = {}):
         data = [] # read file
         with open(input_filename, 'r') as f:
             data = f.readlines()
-        first_frame = WiimoteData.Parse(data[1])[0].frame
-        total_frames = WiimoteData.Parse(data[-1])[0].frame - first_frame
+        first_frame = WiimoteData.Parse(data[1])[0][0].frame
+        total_frames = WiimoteData.Parse(data[-1])[0][0].frame - first_frame
         for line in data[1:]:
             start = time()
-            wiimotes = WiimoteData.Parse(line)
+            wiimotes, extra_info = WiimoteData.Parse(line)
             print(f"Playback frame: {wiimotes[0].frame - first_frame} / {total_frames}", end='\r', flush=True)
             self.new_frame(wiimotes)
+            self.add_text(
+                extra_info,
+                **{
+                    **{"pos":(0,0), "colour": (255, 255, 255, 255), "font": "Delfino.ttf", "size": 16},
+                    **text_settings
+                }
+            )
             self.display()
             sleep(max(1/fps - (time() - start), 0))
         print("\nPlayback complete.")
@@ -199,7 +206,7 @@ class Encoder2D(Encoder):
         print(f"{self.output_name} saved.")
     
     # can use "XVID" codec for avi
-    def save(self, input_filename: str, output_filename = "output.mp4", codec = "mp4v", fps = 60):
+    def save(self, input_filename: str, output_filename = "output.mp4", codec = "mp4v", fps = 60, text_settings = {}):
         data = [] # read file
         with open(input_filename, 'r') as f:
             data = f.readlines()
@@ -207,12 +214,19 @@ class Encoder2D(Encoder):
 
         self.start_recording(output_filename, codec, fps)
 
-        first_frame = WiimoteData.Parse(data[1])[0].frame
-        total_frames = WiimoteData.Parse(data[-1])[0].frame - first_frame
+        first_frame = WiimoteData.Parse(data[1])[0][0].frame
+        total_frames = WiimoteData.Parse(data[-1])[0][0].frame - first_frame
         for line in data[1:]: # skip header
-            wiimotes = WiimoteData.Parse(line)
+            wiimotes, extra_info = WiimoteData.Parse(line)
             print(f"Encoding frame: {wiimotes[0].frame - first_frame} / {total_frames}", end='\r', flush=True)
             self.new_frame(wiimotes)
+            self.add_text(
+                extra_info,
+                **{ # unpacks and merges the default values with the text_settings parameter
+                    **{"pos":(0,0), "colour": (255, 255, 255, 255), "font": "Delfino.ttf", "size": 16},
+                    **text_settings
+                }
+            )
             self.display() # show it while encoding
 
         print()

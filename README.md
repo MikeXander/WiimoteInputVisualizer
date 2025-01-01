@@ -92,7 +92,8 @@ My process for adding an input overlay and encoding a TAS at the same time is th
 4. Run `SaveVideo.py` to create a video of the input overlay.
 5. Combine the input overlay and the TAS encode into one video.
 
-For the final step, I recommend removing the background, and adding a small drop shadow to the overlay so that the inputs stand out. This can be done with any video editing software or with the following FFmpeg command:
+#### Suggestion for the final step:
+I recommend removing the background, and adding a small drop shadow to the overlay so that the inputs stand out. This can be done with any video editing software or with the following FFmpeg command:
 ```
 ffmpeg -i input_overlay.mp4 -i background_footage.mp4 -filter_complex "[0:v]colorkey=color=#000000:similarity=0.1:blend=0.1[removed_bg];[removed_bg]split[inputs][shadow];[shadow]format=rgba,colorchannelmixer=aa=0.9:rr=0:gg=0:bb=0,scale=iw:ih,boxblur=3:1[drop_shadow];[1:v][drop_shadow]overlay=x=0:y=3[bg_with_shadow];[bg_with_shadow][inputs]overlay=x=3:y=0" -c:v libx264 output.mp4
 ```
@@ -104,6 +105,9 @@ If you are unfamiliar with FFmpeg, the key things to note about those commands a
 - the input video files are named `input_overlay.mp4` and `background_footage.mp4`
 - `color=#000000` specifies the background RGB colour (in hexadecimal) to make transparent
 - they output to `output.mp4`
+
+#### Adding on-screen text (displaying speed, joystick coordinates, etc.)
+This data needs to be exported from the `Export_Wiimote_Inputs.lua` script, so edit the `getAdditionalData` function to return a one-line string per frame for your game. Note that `\\n` is turned into `\n` to display as new lines when encoded. Similar to the live display, you can edit the text settings at the bottom of `SaveVideo.py`.
 
 #### :warning: Keep in mind that this tool is designed for short segments
 - The inputs are likely to desync from the gameplay when encoding across loading zones because lag frames are ignored in the lua scripts
@@ -144,7 +148,6 @@ Many games will store processed input in RAM. For example: storing the nunchuk s
 For details on the valid ranges for `WiimoteData`, see the default values in `WiimoteDataParser.py`. You can also look at the other core files as examples, or report an issue here on GitHub for me to add support for your game.
 
 ## Future Improvements (To do):
-- re-implement encoding videos with additional data
 - allow saving videos with multiple layouts (have the layout change if the number of controllers changes)
 - default layouts per controller type, and automatically switch to game specific layouts
 - Output data for lag frames too

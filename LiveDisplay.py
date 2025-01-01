@@ -4,7 +4,9 @@ import Dolphin
 
 FPS = 60
 
-encoder = Encoder2D()
+encoder = Encoder2D(
+    texture_path = "./Textures/"
+)
 
 encoder.set_layouts([
     NunchukLayout("./Layouts/smg_p1.layout"),

@@ -59,15 +59,19 @@ Also, the window size of the visualizer and the background colour will match tha
 #### Changing colours/positions of buttons
 The layout files contained in the `./Layouts/` folder can be directly edited as text files to change the positions and colours of buttons. Here is a brief description of some of the options:
 - xy: the (x,y) position measured from the top left. If any coordinate is negative, the button will be hidden from the layout.
-- RGB: the RGB values from 0-255 to colour the button.
+- RGB: the RGB values from 0-255 to set the colour of the button. If any value is negative, the base image for the button is used as is (see the section below for more details).
 - Joystick enable bounding box: this is the square around the octagonal joystick gate. A value of 0 means hide it, 1 means show it. 
 - DPad rotation: this is a value from 0-3 that changes which button is displayed as "up". If the wiimote is held in the upright position, a value of 0 corresponds to DPad Up pointing up, a value of 3 corresponds to DPad Right pointing up. This correspondence may change if the controller is set to horizontal wiimote inside the Dolphin controller settings.
 
 #### Changing the images used for buttons
-To change the base textures, you can replace any of the images in the `./Textures/` folder with your own. Keep in mind:
+To change the base textures, you can replace any of the images in the `./Textures/` folder with your own, or you can edit `texture_path = "./Textures/"` in `LiveDisplay.py` to point to your own folder with images (just make sure the names of the files are the same). 
+
+By default:
 - Any pixel value darker than #191919 is set to transparent
-- Currently, buttons will always be set to a solid colour, although they will match the transparency of the png provided (the alpha value is preserved)
+- Buttons will be set to a solid colour, although they will match the transparency of the png provided (the alpha value is preserved)
 - You will need to close and re-run the visualizer to see changes made to the base textures.
+
+To use your own images with multiple colours and transparent pixels, set any of the RGB values in the layout file for the desired button to a negative number.
 
 #### Adding on-screen text (displaying speed, joystick coordinates, etc.)
 Additional information is added on a per-game basis. Scroll down to the **Extending Use To Other Games** section to see how to set this up.
@@ -140,7 +144,6 @@ Many games will store processed input in RAM. For example: storing the nunchuk s
 For details on the valid ranges for `WiimoteData`, see the default values in `WiimoteDataParser.py`. You can also look at the other core files as examples, or report an issue here on GitHub for me to add support for your game.
 
 ## Future Improvements (To do):
-- option to NOT recolour textures and take them at face ARGB value (ignore like position)
 - re-implement encoding videos with additional data
 - allow saving videos with multiple layouts (have the layout change if the number of controllers changes)
 - default layouts per controller type, and automatically switch to game specific layouts

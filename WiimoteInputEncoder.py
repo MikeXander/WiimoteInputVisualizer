@@ -1,4 +1,5 @@
 from Layouts import Layout
+from LayoutElements import Texture
 from WiimoteDataParser import WiimoteData, WiimoteType3D
 from typing import List, Tuple
 from PIL import Image, ImageDraw, ImageFont
@@ -66,8 +67,9 @@ class Encoder:
 
 # a collection of layouts, that can be drawn to screen and/or saved to video
 class Encoder2D(Encoder):
-    def __init__(self, window_size = (550, 250), background_colour = (0,0,0)):
+    def __init__(self, window_size = (550, 250), background_colour = (0,0,0), texture_path = "./Textures/"):
         super().__init__(window_size, background_colour)
+        Texture.set_texture_path(texture_path)
         self.layouts = []
         self.sent_font_warn = False
         self.mismatch_layout_warn = False

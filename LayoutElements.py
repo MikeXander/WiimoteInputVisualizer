@@ -13,15 +13,19 @@ from math import sin, cos, atan2
 
 class Texture:
     TRANSPARENT_THRESHOLD = 25
+    TEXTURE_PATH = "./Textures/"
 
     def __init__(self, image_filename: str):
         self.name = image_filename
         self.pos = (0, 0)
         self.colour = (255, 255, 255)
 
-        self.img = pygame.image.load("./Textures/" + image_filename).convert()
-        self.img.set_colorkey((0, 0, 0))
-        pygame.Surface.convert_alpha(self.img)
+        self.original_img = pygame.image.load(Texture.TEXTURE_PATH + image_filename)
+        self.img = self.original_img.convert_alpha()
+
+    @classmethod
+    def set_texture_path(cls, new_path):
+        cls.TEXTURE_PATH = new_path
 
     def draw(self, frame: pygame.Surface):
         if self.pos[0] < 0 or self.pos[1] < 0: # don't draw if a coordinate is negative
@@ -32,9 +36,13 @@ class Texture:
     def reload(self, position, RGB):
         self.pos = position
         self.colour = RGB
-        self.reload_img_colour()
+        if any(x < 0 for x in RGB): # don't set the colour if given a negative R, G, or B value
+            self.img = self.original_img.convert_alpha()
+        else:
+            self.reload_img_colour()
     
     def reload_img_colour(self):
+        self.img.set_colorkey((0, 0, 0))
         w, h = self.img.get_size()
         r, g, b = self.colour
         for x in range(w):
@@ -44,6 +52,7 @@ class Texture:
                     self.img.set_at((x, y), pygame.Color(0, 0, 0, 0))
                 elif all(v >= 0 for v in self.colour):
                     self.img.set_at((x, y), pygame.Color(r, g, b, pixel[3]))
+        self.img = pygame.Surface.convert_alpha(self.img) # just to be safe...
 
 
 # these elements contain data that can change how it's drawn
